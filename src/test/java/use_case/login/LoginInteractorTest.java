@@ -41,6 +41,37 @@ public class LoginInteractorTest {
         interactor.execute(inputData);
     }
 
+    @Test
+    public void successUserLoggedInTest() {
+
+        // create new LoginInputData object and save it to a new repo (our DAO). This is only testable because
+        // we changed the DAO to be in memory.
+        LoginInputData inputData = new LoginInputData("Paul", "password");
+        LoginUserDataAccessInterface userRepository = new InMemoryUserDataAccessObject();
+        UserFactory factory = new CommonUserFactory();
+        User user = factory.create("Paul", "password");
+        userRepository.save(user);
+
+        // This creates a successPresenter that (since it's a Presenter) implements LoginOutputBoundary.
+        // this class is "anonymous" because the implemented class itself is "created" as it's instantiated.
+        // We can see that it overrides and implements the methods defined in the OutputBoundary interface.
+        LoginOutputBoundary successPresenter = new LoginOutputBoundary() {
+            @Override
+            public void prepareSuccessView(LoginOutputData user) {
+                assertEquals("Paul", userRepository.getCurrentUser());
+            }
+
+            @Override
+            public void prepareFailView(String error) {
+                fail("Use case failure is unexpected.");
+            }
+        };
+
+        LoginInputBoundary interactor = new LoginInteractor(userRepository, successPresenter);
+        assertNull(userRepository.getCurrentUser());
+        interactor.execute(inputData);
+    }
+
 
     @Test
     public void failurePasswordMismatchTest() {
